@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 콘텐츠 컴플라이언스 검수 어시스턴트
 
-## Getting Started
+마케팅 콘텐츠(광고 문구, SNS 게시글, 제품 소개 자료 등)를 게시하기 전에 **법무·컴플라이언스 리스크를 AI가 사전 검수**하고, 문제 표현에 대한 대체 표현(수정안)을 제안하는 웹 앱입니다.
 
-First, run the development server:
+의료기기 회사의 마케팅·콘텐츠 담당자가 초안을 작성한 뒤 법무팀의 검토를 기다리지 않고, 셀프로 리스크를 확인하고 수정까지 마칠 수 있도록 돕는 것을 목표로 합니다.
+
+## 무엇을 검수하나요
+
+콘텐츠를 입력하면 아래 5개 카테고리 기준으로 리스크를 탐지하고, 판단 근거와 함께 등급(SAFE / CONDITIONAL / HIGH RISK)을 매깁니다.
+
+- **마케팅 표현**: 과장·오인, 우월성 주장, 비교 광고, 소비자 유인
+- **의료기기 광고**: 효능·효과 단정, 법령상 금지 광고 유형, 허가받은 사용목적 범위 초과 여부
+- **콘텐츠 권리·동의**: 발표자료·영상·음성·초상 사용 범위, 재사용·번역·제3자 제공 권리
+- **환자 정보**: 환자 동의 여부, 식별 가능한 정보 노출
+- **법정 표기 사항**: 허가품목명·사용목적·주의문구·심의필 표시 누락
+
+리스크로 지적할 때는 항상 관련 법령·사내 기준·실제 심의사례 중 하나를 판단 근거로 함께 제시하며, 근거가 불명확하면 "위반"으로 단정하지 않고 "확인 필요(CONDITIONAL)"로 분리해서 표시합니다. 모든 지적에는 최소 1개 이상의 대체 표현(수정안)을 제안하고, 원문 전체에 수정을 반영한 완성본도 함께 제공합니다.
+
+이 도구는 **한국 의료기기 법령 기준**으로만 판단합니다. 해외에 게시할 콘텐츠는 해당 국가의 광고 규정을 별도로 확인해야 합니다.
+
+## 주요 기능
+
+- 텍스트 콘텐츠 입력 → 즉시 리스크 검수 결과 확인
+- 리스크 등급(SAFE / CONDITIONAL / HIGH RISK) 및 카테고리별 지적 사유·판단 근거 표시
+- 대체 표현(수정안) 제안 및 전체 반영본(수정본) 생성 — 한국어/영어 중 원하는 언어로 출력
+- 검수 판단 근거가 되는 법령·사내 기준·실제 심의사례 데이터베이스 관리
+- 이메일/비밀번호 로그인, 관리자(admin) / 일반 사용자(user) 역할 구분
+- 사례(지적 기준) 추가·수정·삭제는 로그인한 모두가 가능하며, 모든 변경 이력이 남고 관리자만 조회 가능
+
+## 기술 스택
+
+- [Next.js](https://nextjs.org) (App Router) + TypeScript + Tailwind CSS
+- OpenAI API (구조화된 출력으로 검수 결과 생성)
+- [Supabase](https://supabase.com) — 인증(Auth), 사례/변경이력 데이터베이스
+- 배포: [Vercel](https://vercel.com)
+
+## 로컬 개발 환경 설정
+
+```bash
+npm install
+```
+
+프로젝트 루트에 `.env` 파일을 만들고 아래 값을 채웁니다. (`.env`는 git에 커밋되지 않습니다.)
+
+| 변수 | 용도 |
+| --- | --- |
+| `OPENAI_API_KEY` | 검수 결과 생성(OpenAI API) |
+| `SUPABASE_URL` | Supabase 프로젝트 URL (서버 전용) |
+| `SUPABASE_SERVICE_ROLE_KEY` | 사례/변경이력 데이터 서버 측 접근 |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL (클라이언트/인증용) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 인증(로그인) |
+
+개발 서버 실행:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`http://localhost:3000`에서 확인할 수 있습니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 참고 문서
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- [PRD.md](PRD.md) — 기획 배경, 목표, 범위
+- [CLAUDE.md](CLAUDE.md) — 프로젝트 개발 규칙
 
-## Learn More
+## 주의사항
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 검수 결과는 참고용입니다. 콘텐츠 게시 여부와 그에 대한 법적 책임은 담당자·회사에게 있습니다.
+- 입력 콘텐츠는 사내한정(대외비) 자료로 취급하며, 실명·연락처 등 개인정보가 포함된 콘텐츠는 입력하지 않아야 합니다.
