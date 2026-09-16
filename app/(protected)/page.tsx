@@ -23,7 +23,7 @@ const 등급색상: Record<등급, string> = {
 
 const 등급설명: Record<등급, string> = {
   "HIGH RISK": "법무·컴플라이언스 확인이 필요합니다.",
-  CONDITIONAL: "아래 조치를 반영하면 진행할 수 있습니다.",
+  CONDITIONAL: "근거 자료가 있다면 그대로 사용해도 됩니다. 없다면 아래 대체 표현을 참고하세요.",
   SAFE: "발견된 리스크가 없습니다.",
 };
 
@@ -35,8 +35,11 @@ const MAX_LENGTH = 5000;
 // 이 두 영역만 "문구 대체"이고, 나머지(콘텐츠 권리·동의, 환자 정보)는 본문에 끼워 넣을 문구가 아니라 조치 안내다.
 const 텍스트치환영역 = new Set(["마케팅 표현", "의료기기 광고"]);
 
+type 수정본언어 = "ko" | "en";
+
 export default function Home() {
   const [content, setContent] = useState("");
+  const [언어, set언어] = useState<수정본언어>("ko");
   const [findings, setFindings] = useState<Finding[] | null>(null);
   const [overallRisk, setOverallRisk] = useState<등급>("SAFE");
   const [revisedContent, setRevisedContent] = useState("");
@@ -55,7 +58,7 @@ export default function Home() {
       const response = await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, language: 언어 }),
       });
       const data = await response.json();
 
@@ -98,9 +101,39 @@ export default function Home() {
         실명·연락처 등 개인정보가 포함된 콘텐츠는 입력하지 마세요.
       </p>
 
-      <label htmlFor="content" className="mt-8 block text-sm font-medium">
-        검수할 콘텐츠
-      </label>
+      <div className="mt-8 flex items-center justify-between">
+        <label htmlFor="content" className="block text-sm font-medium">
+          검수할 콘텐츠
+        </label>
+
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-neutral-500">수정본 언어</span>
+          <div className="flex rounded-full border border-neutral-300 p-0.5 dark:border-neutral-700">
+            <button
+              type="button"
+              onClick={() => set언어("ko")}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                언어 === "ko"
+                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                  : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+              }`}
+            >
+              한글
+            </button>
+            <button
+              type="button"
+              onClick={() => set언어("en")}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                언어 === "en"
+                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                  : "text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+              }`}
+            >
+              영어
+            </button>
+          </div>
+        </div>
+      </div>
       <textarea
         id="content"
         value={content}
@@ -144,26 +177,15 @@ export default function Home() {
             해당 국가의 광고 규정도 별도로 확인해야 합니다.
           </p>
 
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span
-                className={`rounded-full px-3 py-1 text-sm font-semibold ${등급색상[overallRisk]}`}
-              >
-                {overallRisk}
-              </span>
-              <span className="text-sm text-neutral-600 dark:text-neutral-400">
-                {등급설명[overallRisk]}
-              </span>
-            </div>
-
-            {텍스트치환건.length > 0 && (
-              <button
-                onClick={수정본복사하기}
-                className="rounded-full border border-neutral-300 px-4 py-1.5 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
-              >
-                {복사완료 ? "복사됨 ✓" : "수정본 복사"}
-              </button>
-            )}
+          <div className="mt-3 flex items-center gap-3">
+            <span
+              className={`rounded-full px-3 py-1 text-sm font-semibold ${등급색상[overallRisk]}`}
+            >
+              {overallRisk}
+            </span>
+            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              {등급설명[overallRisk]}
+            </span>
           </div>
 
           {별도조치건.length > 0 && (
@@ -171,12 +193,6 @@ export default function Home() {
               콘텐츠 권리·동의, 환자 정보 관련 {별도조치건.length}건은 문구 수정이 아니라 별도 조치가
               필요해 수정본에 포함되지 않습니다. 아래 항목에서 직접 확인해 주세요.
             </p>
-          )}
-
-          {텍스트치환건.length > 0 && (
-            <div className="mt-4 rounded-lg border border-neutral-200 bg-neutral-50 p-4 text-sm whitespace-pre-wrap dark:border-neutral-800 dark:bg-neutral-900">
-              {revisedContent}
-            </div>
           )}
 
           {findings.length > 0 && (
@@ -230,6 +246,28 @@ export default function Home() {
                 </li>
               ))}
             </ul>
+          )}
+
+          {텍스트치환건.length > 0 && (
+            <div className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+              <h3 className="text-sm font-semibold">모든 수정을 반영한 전체 콘텐츠</h3>
+              <p className="mt-1 text-xs text-neutral-500">
+                아래 텍스트를 클릭해 전체 선택(Ctrl+A) 후 복사하거나, 버튼으로 바로 복사할 수 있습니다.
+              </p>
+              <textarea
+                readOnly
+                value={revisedContent}
+                onFocus={(event) => event.target.select()}
+                rows={8}
+                className="mt-3 w-full resize-y rounded-lg border border-neutral-300 bg-neutral-50 p-3 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+              />
+              <button
+                onClick={수정본복사하기}
+                className="mt-3 w-full rounded-full border border-neutral-300 px-4 py-2.5 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+              >
+                {복사완료 ? "복사됨 ✓" : "수정본 복사"}
+              </button>
+            </div>
           )}
         </section>
       )}

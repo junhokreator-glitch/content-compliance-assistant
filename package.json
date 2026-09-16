@@ -10,7 +10,9 @@
     "fetch-laws": "node --env-file=.env scripts/fetch-laws.mjs",
     "build-guidelines": "node scripts/build-guidelines.mjs",
     "eval": "node scripts/eval.mjs",
-    "create-test-accounts": "node --env-file=.env scripts/create-test-accounts.mjs"
+    "create-test-accounts": "node --env-file=.env scripts/create-test-accounts.mjs",
+    "parse-ad-review-cases": "node --env-file=.env scripts/parse-ad-review-cases.mjs",
+    "insert-ad-review-cases": "node --env-file=.env scripts/insert-ad-review-cases.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
