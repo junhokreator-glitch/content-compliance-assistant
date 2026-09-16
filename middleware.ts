@@ -8,6 +8,12 @@ const PUBLIC_PATHS = ["/login", "/signup", "/auth"];
 const isPublicPath = (pathname: string) =>
   PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
+// 회원가입은 @jeisys.com만 허용하지만(Before User Created 훅 + auth/confirm 재확인),
+// 그 방어를 어떤 이유로든 우회해 세션이 생긴 경우를 대비해 모든 요청에서 한 번 더 확인한다.
+const ALLOWED_EMAIL_DOMAIN = "jeisys.com";
+const hasAllowedDomain = (email?: string) =>
+  !!email && email.toLowerCase().split("@")[1] === ALLOWED_EMAIL_DOMAIN;
+
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -34,6 +40,19 @@ export async function middleware(request: NextRequest) {
   const isAuthed = !error && !!claims?.email;
   const role = claims?.app_metadata?.role === "admin" ? "admin" : "user";
   const { pathname } = request.nextUrl;
+
+  if (isAuthed && !hasAllowedDomain(claims?.email)) {
+    await supabase.auth.signOut();
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: "회사 이메일(@jeisys.com) 계정만 사용할 수 있습니다." },
+        { status: 403 },
+      );
+    }
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("error", "회사 이메일(@jeisys.com) 계정만 사용할 수 있습니다.");
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (!isAuthed && !isPublicPath(pathname)) {
     if (pathname.startsWith("/api/")) {
